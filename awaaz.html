@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>आWAAZ — Bolo. Dikhao. Badlo.</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --orange: #FF6B00;
+  --orange-dim: rgba(255,107,0,0.15);
+  --orange-glow: rgba(255,107,0,0.3);
+  --black: #080808;
+  --card: #111111;
+  --card2: #181818;
+  --border: rgba(255,255,255,0.08);
+  --white: #ffffff;
+  --gray: #666;
+  --light: #aaa;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 2px; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(8,8,8,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.logo {
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -1px; cursor: pointer;
+}
+.logo .hindi { 
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  color: var(--orange); font-weight: 700;
+}
+.logo .eng { color: var(--white); }
+
+.nav-tabs {
+  display: flex; gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 4px;
+}
+.nav-tab {
+  padding: 8px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  color: var(--gray); border: none; background: none;
+  font-family: 'Syne', sans-serif;
+}
+.nav-tab.active {
+  background: var(--orange); color: white;
+}
+.nav-tab:hover:not(.active) { color: var(--white); }
+
+.report-btn {
+  background: var(--orange);
+  color: white; border: none;
+  padding: 10px 20px; border-radius: 10px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: 'Syne', sans-serif;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.report-btn:hover { background: #ff8c00; transform: translateY(-1px); }
+
+/* PAGES */
+.page { display: none; padding-top: 64px; min-height: 100vh; }
+.page.active { display: block; }
+
+/* ── HOME PAGE ── */
+.hero {
+  padding: 80px 24px 48px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,107,0,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--orange-dim);
+  border: 1px solid var(--orange-glow);
+  padding: 6px 16px; border-radius: 20px;
+  font-size: 12px; color: var(--orange);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.hero-dot { width: 6px; height: 6px; background: var(--orange); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+.hero h1 {
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 800; line-height: 1;
+  letter-spacing: -3px; margin-bottom: 16px;
+}
+.hero h1 .hi { font-family: 'Noto Sans Devanagari'; color: var(--orange); }
+
+.hero-sub {
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--light); font-weight: 400;
+  max-width: 480px; margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--orange); color: white;
+  border: none; padding: 14px 28px; border-radius: 12px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  font-family: 'Syne'; transition: all 0.2s;
+}
+.btn-primary:hover { background: #ff8c00; transform: translateY(-2px); box-shadow: 0 8px 24px var(--orange-glow); }
+.btn-secondary {
+  background: transparent; color: var(--white);
+  border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  font-family: 'Syne'; transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+
+/* STATS BAR */
+.stats-bar {
+  display: flex; justify-content: center; gap: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 48px;
+}
+.stat-item {
+  flex: 1; max-width: 200px;
+  padding: 24px 16px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-num {
+  font-size: 32px; font-weight: 800;
+  color: var(--orange); line-height: 1;
+  font-family: 'JetBrains Mono';
+}
+.stat-lbl { font-size: 11px; color: var(--gray); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* LIVE MAP */
+.section { padding: 0 24px 48px; max-width: 1200px; margin: 0 auto; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.section-title { font-size: 22px; font-weight: 800; }
+.section-title span { color: var(--orange); }
+.see-all { font-size: 13px; color: var(--orange); cursor: pointer; font-weight: 600; text-decoration: none; }
+
+#home-map {
+  width: 100%; height: 420px;
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+/* RECENT REPORTS */
+.reports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+.report-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+  cursor: pointer; transition: all 0.2s;
+}
+.report-card:hover { border-color: var(--orange); transform: translateY(-2px); }
+
+.report-img {
+  width: 100%; height: 160px;
+  object-fit: cover; background: var(--card2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+}
+.report-body { padding: 16px; }
+.report-cat {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.report-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; line-height: 1.4; }
+.report-meta { display: flex; align-items: center; justify-content: space-between; }
+.report-loc { font-size: 12px; color: var(--gray); }
+.report-votes {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--orange); font-weight: 600;
+}
+.report-status {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; margin-top: 8px;
+}
+.status-open { background: rgba(255,50,50,0.15); color: #ff5555; }
+.status-progress { background: rgba(255,165,0,0.15); color: orange; }
+.status-fixed { background: rgba(50,200,50,0.15); color: #44dd44; }
+
+/* ── REPORT PAGE ── */
+.report-page { max-width: 600px; margin: 0 auto; padding: 40px 24px; }
+.report-page h2 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+.report-page h2 span { color: var(--orange); }
+.report-page p { color: var(--light); margin-bottom: 32px; }
+
+.form-group { margin-bottom: 20px; }
+.form-label { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--light); margin-bottom: 8px; display: block; }
+
+.form-input {
+  width: 100%; background: var(--card);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 16px; color: var(--white);
+  font-size: 15px; font-family: 'Syne';
+  transition: border-color 0.2s; outline: none;
+}
+.form-input:focus { border-color: var(--orange); }
+.form-input::placeholder { color: var(--gray); }
+
+textarea.form-input { resize: vertical; min-height: 100px; }
+
+.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.cat-option {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 600;
+}
+.cat-option:hover { border-color: var(--orange); }
+.cat-option.selected { border-color: var(--orange); background: var(--orange-dim); color: var(--orange); }
+.cat-icon { font-size: 22px; }
+
+.photo-upload {
+  width: 100%; height: 140px;
+  background: var(--card); border: 2px dashed var(--border);
+  border-radius: 12px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: all 0.2s; font-size: 14px; color: var(--gray);
+}
+.photo-upload:hover { border-color: var(--orange); color: var(--orange); }
+.photo-upload input { display: none; }
+.photo-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 12px; display: none; }
+
+.name-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.submit-btn {
+  width: 100%; background: var(--orange); color: white;
+  border: none; padding: 16px; border-radius: 12px;
+  font-size: 16px; font-weight: 800; cursor: pointer;
+  font-family: 'Syne'; transition: all 0.2s; margin-top: 8px;
+}
+.submit-btn:hover { background: #ff8c00; transform: translateY(-1px); box-shadow: 0 8px 24px var(--orange-glow); }
+
+/* SUCCESS */
+.success-screen {
+  display: none; text-align: center; padding: 60px 24px;
+}
+.success-icon { font-size: 72px; margin-bottom: 24px; }
+.success-screen h2 { font-size: 36px; font-weight: 800; margin-bottom: 12px; }
+.success-screen h2 span { color: var(--orange); }
+.success-screen p { color: var(--light); margin-bottom: 32px; font-size: 16px; }
+.share-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.share-btn {
+  padding: 12px 24px; border-radius: 10px; border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: 'Syne'; display: flex; align-items: center; gap: 8px;
+}
+.share-wa { background: #25D366; color: white; }
+.share-tw { background: #1DA1F2; color: white; }
+
+/* ── MAP PAGE ── */
+#full-map { width: 100%; height: calc(100vh - 64px); }
+
+/* ── LEADERBOARD PAGE ── */
+.leaderboard-page { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+.lb-header { text-align: center; margin-bottom: 48px; }
+.lb-header h2 { font-size: 40px; font-weight: 800; margin-bottom: 8px; }
+.lb-header h2 span { color: var(--orange); }
+.lb-header p { color: var(--light); }
+
+/* CITY SCORE */
+.city-score-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px; margin-bottom: 32px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.city-score-card::before {
+  content: '';
+  position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(255,107,0,0.1) 0%, transparent 70%);
+}
+.score-label { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gray); margin-bottom: 16px; }
+.score-num {
+  font-size: 80px; font-weight: 800; line-height: 1;
+  font-family: 'JetBrains Mono';
+  background: linear-gradient(135deg, var(--orange), #ffaa00);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.score-sub { font-size: 14px; color: var(--light); margin-top: 8px; }
+.score-bar {
+  width: 100%; height: 6px; background: var(--card2);
+  border-radius: 3px; margin: 20px 0 8px; overflow: hidden;
+}
+.score-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--orange), #ffaa00);
+  transition: width 1s ease;
+}
+
+/* TOP CITIZENS */
+.top3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.top-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px 16px; text-align: center;
+  position: relative; transition: all 0.2s;
+}
+.top-card:hover { border-color: var(--orange); transform: translateY(-2px); }
+.top-card.first { border-color: #FFD700; }
+.top-card.second { border-color: #C0C0C0; }
+.top-card.third { border-color: #CD7F32; }
+
+.rank-badge {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--black); border: 2px solid var(--border);
+  border-radius: 20px; padding: 2px 12px;
+  font-size: 16px;
+}
+.citizen-avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--orange-dim); border: 2px solid var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin: 8px auto 12px;
+}
+.citizen-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.citizen-area { font-size: 12px; color: var(--gray); margin-bottom: 12px; }
+.citizen-reports {
+  font-size: 24px; font-weight: 800; color: var(--orange);
+  font-family: 'JetBrains Mono';
+}
+.citizen-reports-lbl { font-size: 10px; color: var(--gray); letter-spacing: 1px; }
+
+/* BADGES */
+.badge-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.badge {
+  font-size: 10px; padding: 3px 8px; border-radius: 4px;
+  background: var(--orange-dim); color: var(--orange);
+  border: 1px solid var(--orange-glow); font-weight: 700;
+}
+
+/* FULL LEADERBOARD TABLE */
+.lb-table { width: 100%; border-collapse: collapse; }
+.lb-table th {
+  text-align: left; padding: 12px 16px;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gray); border-bottom: 1px solid var(--border);
+}
+.lb-row {
+  border-bottom: 1px solid var(--border); transition: background 0.2s;
+}
+.lb-row:hover { background: var(--card); }
+.lb-row td { padding: 14px 16px; font-size: 14px; }
+.lb-rank { font-family: 'JetBrains Mono'; color: var(--gray); font-size: 13px; }
+.lb-name { font-weight: 700; }
+.lb-count { color: var(--orange); font-weight: 700; font-family: 'JetBrains Mono'; }
+
+/* CATEGORY COLORS */
+.cat-pothole { background: rgba(255,100,100,0.15); color: #ff6464; }
+.cat-garbage { background: rgba(100,200,100,0.15); color: #64c864; }
+.cat-light { background: rgba(255,220,0,0.15); color: #ffdc00; }
+.cat-water { background: rgba(100,150,255,0.15); color: #6496ff; }
+.cat-construction { background: rgba(255,150,50,0.15); color: #ff9632; }
+.cat-tree { background: rgba(100,200,100,0.15); color: #64c864; }
+.cat-animal { background: rgba(255,100,200,0.15); color: #ff64c8; }
+.cat-toilet { background: rgba(150,100,255,0.15); color: #9664ff; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--card); border: 1px solid var(--orange);
+  border-radius: 12px; padding: 14px 24px;
+  font-size: 14px; font-weight: 600; z-index: 9999;
+  transition: transform 0.3s ease; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .nav-tabs { display: none; }
+  .top3 { grid-template-columns: 1fr; }
+  .name-input-row { grid-template-columns: 1fr; }
+  .cat-grid { grid-template-columns: 1fr; }
+  .hero h1 { letter-spacing: -2px; }
+  .stats-bar { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="showPage('home')">
+    <span class="hindi">आ</span><span class="eng">WAAZ</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home')">🏠 Home</button>
+    <button class="nav-tab" onclick="showPage('map')">🗺️ Map</button>
+    <button class="nav-tab" onclick="showPage('leaderboard')">🏆 Leaders</button>
+  </div>
+  <button class="report-btn" onclick="showPage('report')">
+    ⚡ Report Problem
+  </button>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-tag"><div class="hero-dot"></div>Jaipur — Live</div>
+    <h1><span class="hi">आ</span>WAAZ</h1>
+    <p class="hero-sub">Bolo. Dikhao. Badlo.<br>Report city problems. Earn respect. Fix Jaipur.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="showPage('report')">⚡ Report a Problem</button>
+      <button class="btn-secondary" onclick="showPage('map')">🗺️ See Live Map</button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num" id="stat-reports">247</div>
+      <div class="stat-lbl">Problems Reported</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-fixed">89</div>
+      <div class="stat-lbl">Problems Fixed</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-citizens">1.2K</div>
+      <div class="stat-lbl">Active Citizens</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-score">72</div>
+      <div class="stat-lbl">City Score</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">🗺️ <span>Live</span> Problem Map</div>
+      <a class="see-all" onclick="showPage('map')">Full Map →</a>
+    </div>
+    <div id="home-map"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">🔴 <span>Recent</span> Reports</div>
+      <a class="see-all" onclick="showPage('map')">See All →</a>
+    </div>
+    <div class="reports-grid" id="recent-reports"></div>
+  </div>
+</div>
+
+<!-- REPORT PAGE -->
+<div class="page" id="page-report">
+  <div class="report-page" id="report-form-wrap">
+    <h2>Report a <span>Problem</span></h2>
+    <p>Apni city ki problem report karo. Hum milke fix karenge. 💪</p>
+
+    <div class="form-group">
+      <label class="form-label">📍 Category</label>
+      <div class="cat-grid" id="cat-grid">
+        <div class="cat-option" onclick="selectCat(this,'pothole')" data-cat="pothole">
+          <span class="cat-icon">🕳️</span> Pothole / Road
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'garbage')" data-cat="garbage">
+          <span class="cat-icon">🗑️</span> Garbage / Waste
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'light')" data-cat="light">
+          <span class="cat-icon">💡</span> Broken Streetlight
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'water')" data-cat="water">
+          <span class="cat-icon">💧</span> Water / Sewage
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'construction')" data-cat="construction">
+          <span class="cat-icon">🏗️</span> Illegal Construction
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'tree')" data-cat="tree">
+          <span class="cat-icon">🌳</span> Tree Fallen / Road Block
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'animal')" data-cat="animal">
+          <span class="cat-icon">🐕</span> Stray Animal Danger
+        </div>
+        <div class="cat-option" onclick="selectCat(this,'toilet')" data-cat="toilet">
+          <span class="cat-icon">🚻</span> Public Toilet
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">📷 Photo (Optional)</label>
+      <label class="photo-upload" id="photo-label">
+        <input type="file" accept="image/*" onchange="previewPhoto(this)">
+        <span style="font-size:32px">📷</span>
+        <span>Tap to add photo</span>
+        <span style="font-size:12px;color:var(--gray)">Problem ki photo lagao</span>
+      </label>
+      <img class="photo-preview" id="photo-preview" alt="Preview">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">📝 Description</label>
+      <textarea class="form-input" id="desc" placeholder="Problem describe karo... (Hindi ya English mein)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">📍 Location / Area</label>
+      <input class="form-input" id="location" placeholder="e.g. Malviya Nagar, C-Scheme, Vaishali Nagar...">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">👤 Your Name (Optional)</label>
+      <div class="name-input-row">
+        <input class="form-input" id="reporter-name" placeholder="Aapka naam">
+        <input class="form-input" id="reporter-phone" placeholder="WhatsApp number">
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitReport()">
+      ⚡ Submit Report — आगे बढ़ो
+    </button>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">🎉</div>
+    <h2>Report <span>Submit</span> Ho Gayi!</h2>
+    <p>Shukriya! Aapki awaaz sun li gayi.<br>Aapka report live map par show ho raha hai.</p>
+    <div class="share-btns">
+      <button class="share-btn share-wa" onclick="shareWhatsApp()">
+        📱 WhatsApp pe Share Karo
+      </button>
+      <button class="share-btn" style="background:var(--orange);color:white" onclick="showPage('map')">
+        🗺️ Map pe Dekho
+      </button>
+    </div>
+    <br><br>
+    <button class="btn-secondary" onclick="resetForm()" style="margin:0 auto;display:block">
+      + Aur Report Karo
+    </button>
+  </div>
+</div>
+
+<!-- MAP PAGE -->
+<div class="page" id="page-map">
+  <div id="full-map"></div>
+</div>
+
+<!-- LEADERBOARD PAGE -->
+<div class="page" id="page-leaderboard">
+  <div class="leaderboard-page">
+    <div class="lb-header">
+      <h2>🏆 <span>Jaipur</span> Heroes</h2>
+      <p>Ye log apni city badal rahe hain. Kya tum taiyaar ho?</p>
+    </div>
+
+    <!-- CITY SCORE -->
+    <div class="city-score-card">
+      <div class="score-label">🏙️ Jaipur City Score — March 2026</div>
+      <div class="score-num" id="city-score-num">72</div>
+      <div class="score-sub">out of 100 — Keep reporting to improve!</div>
+      <div class="score-bar"><div class="score-fill" id="score-fill" style="width:72%"></div></div>
+      <div style="font-size:13px;color:var(--gray)">89 problems fixed this month 🔧</div>
+    </div>
+
+    <!-- TOP 3 -->
+    <div class="top3" id="top3-citizens"></div>
+
+    <!-- FULL TABLE -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:24px">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Citizen</th>
+            <th>Area</th>
+            <th>Reports</th>
+            <th>Fixed</th>
+            <th>Badges</th>
+          </tr>
+        </thead>
+        <tbody id="lb-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────
+const CATS = {
+  pothole:      { label: 'Pothole / Road', icon: '🕳️', cls: 'cat-pothole' },
+  garbage:      { label: 'Garbage / Waste', icon: '🗑️', cls: 'cat-garbage' },
+  light:        { label: 'Broken Streetlight', icon: '💡', cls: 'cat-light' },
+  water:        { label: 'Water / Sewage', icon: '💧', cls: 'cat-water' },
+  construction: { label: 'Illegal Construction', icon: '🏗️', cls: 'cat-construction' },
+  tree:         { label: 'Tree / Road Block', icon: '🌳', cls: 'cat-tree' },
+  animal:       { label: 'Stray Animal', icon: '🐕', cls: 'cat-animal' },
+  toilet:       { label: 'Public Toilet', icon: '🚻', cls: 'cat-toilet' },
+};
+
+// Sample reports for Jaipur
+let REPORTS = [
+  { id:1, cat:'pothole', title:'Bada pothole — 2 accidents ho chuke', area:'Malviya Nagar', lat:26.851, lng:75.802, votes:47, status:'open', reporter:'Rahul S.', time:'2h ago' },
+  { id:2, cat:'garbage', title:'Garbage nahi utha 5 din se', area:'Vaishali Nagar', lat:26.912, lng:75.741, votes:38, status:'open', reporter:'Priya M.', time:'4h ago' },
+  { id:3, cat:'light', title:'Street light band hai — raat ko andhera', area:'C-Scheme', lat:26.913, lng:75.808, votes:29, status:'progress', reporter:'Amit K.', time:'1d ago' },
+  { id:4, cat:'water', title:'Sewage overflow road pe aa raha hai', area:'Mansarovar', lat:26.852, lng:75.752, votes:52, status:'open', reporter:'Sunita R.', time:'3h ago' },
+  { id:5, cat:'pothole', title:'Road bilkul toot gayi — baarish ke baad', area:'Sodala', lat:26.931, lng:75.778, votes:34, status:'fixed', reporter:'Dev P.', time:'2d ago' },
+  { id:6, cat:'tree', title:'Ped gir gaya — rasta band hai', area:'Bani Park', lat:26.924, lng:75.797, votes:41, status:'progress', reporter:'Kavita J.', time:'6h ago' },
+];
+
+const CITIZENS = [
+  { name:'Rahul Sharma', area:'Malviya Nagar', reports:47, fixed:32, emoji:'👨', badges:['City Guardian','Change Maker','Awaaz Hero'] },
+  { name:'Priya Meena', area:'Vaishali Nagar', reports:38, fixed:25, emoji:'👩', badges:['City Guardian','Change Maker'] },
+  { name:'Amit Kumar', area:'C-Scheme', reports:31, fixed:19, emoji:'👨', badges:['City Guardian'] },
+  { name:'Sunita Rathore', area:'Mansarovar', reports:28, fixed:15, emoji:'👩', badges:['Awaaz Warrior'] },
+  { name:'Dev Patil', area:'Sodala', reports:24, fixed:12, emoji:'👨', badges:['Awaaz Warrior'] },
+  { name:'Kavita Joshi', area:'Bani Park', reports:19, fixed:8, emoji:'👩', badges:['Awaaz Warrior'] },
+  { name:'Vikram Singh', area:'Tonk Road', reports:15, fixed:6, emoji:'👨', badges:[] },
+  { name:'Anjali Gupta', area:'Raja Park', reports:12, fixed:4, emoji:'👩', badges:[] },
+];
+
+// ── STATE ────────────────────────────────────────────────
+let selectedCat = '';
+let homeMap = null;
+let fullMap = null;
+let lastReport = null;
+
+// ── NAVIGATION ───────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  const tabs = { home:0, map:1, leaderboard:2 };
+  if (tabs[page] !== undefined) {
+    document.querySelectorAll('.nav-tab')[tabs[page]].classList.add('active');
+  }
+
+  if (page === 'home' && !homeMap) initHomeMap();
+  if (page === 'map' && !fullMap) initFullMap();
+  if (page === 'leaderboard') initLeaderboard();
+  if (page === 'home') renderRecentReports();
+
+  window.scrollTo(0,0);
+}
+
+// ── MAPS ─────────────────────────────────────────────────
+function getMarkerColor(status) {
+  if (status === 'fixed') return '#44dd44';
+  if (status === 'progress') return '#ffaa00';
+  return '#ff4444';
+}
+
+function makeMarker(report) {
+  const color = getMarkerColor(report.status);
+  const cat = CATS[report.cat];
+  return L.divIcon({
+    html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4)">${cat.icon}</div>`,
+    className: '', iconSize:[36,36], iconAnchor:[18,18]
+  });
+}
+
+function initHomeMap() {
+  homeMap = L.map('home-map', { zoomControl:false, scrollWheelZoom:false })
+    .setView([26.9124, 75.7873], 12);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'', maxZoom:19
+  }).addTo(homeMap);
+  addMarkersToMap(homeMap);
+}
+
+function initFullMap() {
+  fullMap = L.map('full-map').setView([26.9124, 75.7873], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'', maxZoom:19
+  }).addTo(fullMap);
+  addMarkersToMap(fullMap);
+  // Legend
+  const legend = L.control({position:'bottomleft'});
+  legend.onAdd = () => {
+    const d = L.DomUtil.create('div');
+    d.style.cssText = 'background:rgba(8,8,8,0.9);border:1px solid #333;border-radius:12px;padding:12px 16px;color:white;font-family:Syne,sans-serif;font-size:12px';
+    d.innerHTML = '<div style="font-weight:700;margin-bottom:8px;letter-spacing:1px">STATUS</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="width:12px;height:12px;border-radius:50%;background:#ff4444"></div> Open</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="width:12px;height:12px;border-radius:50%;background:#ffaa00"></div> In Progress</div>' +
+      '<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:50%;background:#44dd44"></div> Fixed</div>';
+    return d;
+  };
+  legend.addTo(fullMap);
+}
+
+function addMarkersToMap(map) {
+  REPORTS.forEach(r => {
+    const cat = CATS[r.cat];
+    L.marker([r.lat, r.lng], {icon: makeMarker(r)})
+      .addTo(map)
+      .bindPopup(`
+        <div style="font-family:Syne,sans-serif;min-width:200px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px">${cat.icon} ${r.title}</div>
+          <div style="font-size:11px;color:#aaa;margin-bottom:4px">📍 ${r.area}</div>
+          <div style="font-size:11px;color:#aaa;margin-bottom:8px">👤 ${r.reporter} · ${r.time}</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="background:${r.status==='fixed'?'#1a3d1a':r.status==='progress'?'#3d2a00':'#3d1a1a'};color:${r.status==='fixed'?'#44dd44':r.status==='progress'?'#ffaa00':'#ff4444'};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase">${r.status}</span>
+            <span style="color:#FF6B00;font-weight:700">▲ ${r.votes}</span>
+          </div>
+        </div>
+      `);
+  });
+}
+
+// ── RECENT REPORTS ───────────────────────────────────────
+function renderRecentReports() {
+  const container = document.getElementById('recent-reports');
+  const sorted = [...REPORTS].sort((a,b) => b.votes - a.votes).slice(0,6);
+  container.innerHTML = sorted.map(r => {
+    const cat = CATS[r.cat];
+    const statusCls = r.status === 'fixed' ? 'status-fixed' : r.status === 'progress' ? 'status-progress' : 'status-open';
+    const statusTxt = r.status === 'fixed' ? '✅ Fixed' : r.status === 'progress' ? '🔧 In Progress' : '🔴 Open';
+    return `
+      <div class="report-card">
+        <div class="report-img">${cat.icon}</div>
+        <div class="report-body">
+          <div class="report-cat ${cat.cls}">${cat.icon} ${cat.label}</div>
+          <div class="report-title">${r.title}</div>
+          <div class="report-meta">
+            <div class="report-loc">📍 ${r.area}</div>
+            <div class="report-votes">▲ ${r.votes}</div>
+          </div>
+          <div class="report-status ${statusCls}">${statusTxt}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── REPORT FORM ──────────────────────────────────────────
+function selectCat(el, cat) {
+  document.querySelectorAll('.cat-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCat = cat;
+}
+
+function previewPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('photo-label').style.display = 'none';
+      const preview = document.getElementById('photo-preview');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function submitReport() {
+  if (!selectedCat) { showToast('⚠️ Category select karo!'); return; }
+  const desc = document.getElementById('desc').value.trim();
+  const location = document.getElementById('location').value.trim();
+  if (!location) { showToast('⚠️ Location daalo!'); return; }
+
+  const name = document.getElementById('reporter-name').value.trim() || 'Anonymous Citizen';
+
+  // Add to reports
+  const newReport = {
+    id: REPORTS.length + 1,
+    cat: selectedCat,
+    title: desc || CATS[selectedCat].label + ' — ' + location,
+    area: location,
+    lat: 26.9124 + (Math.random()-0.5)*0.1,
+    lng: 75.7873 + (Math.random()-0.5)*0.1,
+    votes: 1,
+    status: 'open',
+    reporter: name,
+    time: 'Just now'
+  };
+  REPORTS.unshift(newReport);
+  lastReport = newReport;
+
+  // Update stats
+  document.getElementById('stat-reports').textContent = REPORTS.length + 247;
+
+  // Show success
+  document.getElementById('report-form-wrap').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+
+  // Reset map
+  homeMap = null; fullMap = null;
+}
+
+function resetForm() {
+  selectedCat = '';
+  document.getElementById('desc').value = '';
+  document.getElementById('location').value = '';
+  document.getElementById('reporter-name').value = '';
+  document.getElementById('reporter-phone').value = '';
+  document.getElementById('photo-label').style.display = 'flex';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.querySelectorAll('.cat-option').forEach(o => o.classList.remove('selected'));
+  document.getElementById('report-form-wrap').style.display = 'block';
+  document.getElementById('success-screen').style.display = 'none';
+}
+
+function shareWhatsApp() {
+  const area = lastReport ? lastReport.area : 'Jaipur';
+  const cat = lastReport ? CATS[lastReport.cat].label : 'Problem';
+  const text = `🚨 *आWAAZ — City Problem Report*\n\n📍 *${area}*\n🔴 *${cat}*\n\nMainne ye problem report ki hai. Aap bhi apne area ki problem report karo:\n👉 https://deveshpatilraut.github.io/awaaz\n\n*Bolo. Dikhao. Badlo.* 🇮🇳`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text));
+}
+
+// ── LEADERBOARD ──────────────────────────────────────────
+function initLeaderboard() {
+  // Top 3
+  const top3 = document.getElementById('top3-citizens');
+  const rankEmoji = ['🥇','🥈','🥉'];
+  const rankCls = ['first','second','third'];
+  top3.innerHTML = CITIZENS.slice(0,3).map((c,i) => `
+    <div class="top-card ${rankCls[i]}">
+      <div class="rank-badge">${rankEmoji[i]}</div>
+      <div class="citizen-avatar">${c.emoji}</div>
+      <div class="citizen-name">${c.name}</div>
+      <div class="citizen-area">📍 ${c.area}</div>
+      <div class="citizen-reports">${c.reports}</div>
+      <div class="citizen-reports-lbl">REPORTS</div>
+      <div class="badge-row">
+        ${c.badges.map(b => `<span class="badge">${b}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // Full table
+  const tbody = document.getElementById('lb-table-body');
+  tbody.innerHTML = CITIZENS.map((c,i) => `
+    <tr class="lb-row">
+      <td class="lb-rank">#${i+1}</td>
+      <td class="lb-name">${c.emoji} ${c.name}</td>
+      <td style="color:var(--gray);font-size:13px">📍 ${c.area}</td>
+      <td class="lb-count">${c.reports}</td>
+      <td style="color:#44dd44;font-weight:700;font-family:'JetBrains Mono'">${c.fixed}</td>
+      <td>${c.badges.slice(0,1).map(b=>`<span class="badge">${b}</span>`).join('')}</td>
+    </tr>
+  `).join('');
+}
+
+// ── TOAST ────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ─────────────────────────────────────────────────
+showPage('home');
+</script>
+</body>
+</html>
