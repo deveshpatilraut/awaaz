@@ -279,7 +279,13 @@ window.upvoteReport = async (id) => {
     </div>
     <div class="fgroup">
       <label class="flbl">📍 Area / Location</label>
-      <input class="finput" id="flocation" placeholder="e.g. Hawa Mahal Rd, Malviya Nagar...">
+      <div style="position:relative">
+        <input class="finput" id="flocation" placeholder="e.g. Hawa Mahal Rd, Malviya Nagar..." autocomplete="off" oninput="locationSearch(this.value)">
+        <div id="loc-suggestions" style="position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid var(--orange);border-top:none;border-radius:0 0 12px 12px;z-index:999;display:none;max-height:200px;overflow-y:auto"></div>
+      </div>
+      <button onclick="getGPS()" style="margin-top:8px;background:var(--od);border:1px solid var(--og);color:var(--orange);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Syne;width:100%;display:flex;align-items:center;justify-content:center;gap:8px" id="gps-btn">
+        📍 Use My Current Location
+      </button>
     </div>
     <div class="fgroup">
       <label class="flbl">🏙️ City</label>
@@ -441,7 +447,7 @@ async function doSubmit(){
   const btn=document.getElementById('sbtn');
   btn.disabled=true;btn.textContent='⏳ Submitting...';
   let lat=22.5+(Math.random()-0.5)*10,lng=78.9+(Math.random()-0.5)*10;
-  try{const g=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc+', '+city+', India')}&format=json&limit=1&countrycodes=in`);const gd=await g.json();if(gd[0]){lat=parseFloat(gd[0].lat);lng=parseFloat(gd[0].lon);}else{const g2=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city+', India')}&format=json&limit=1&countrycodes=in`);const gd2=await g2.json();if(gd2[0]){lat=parseFloat(gd2[0].lat);lng=parseFloat(gd2[0].lon);}}}catch{}
+  if(selectedLat&&selectedLng){lat=selectedLat;lng=selectedLng;}else{try{const g=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc+', '+city+', India')}&format=json&limit=1&countrycodes=in`);const gd=await g.json();if(gd[0]){lat=parseFloat(gd[0].lat);lng=parseFloat(gd[0].lon);}else{const g2=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city+', India')}&format=json&limit=1&countrycodes=in`);const gd2=await g2.json();if(gd2[0]){lat=parseFloat(gd2[0].lat);lng=parseFloat(gd2[0].lon);}}}catch{}}
   const data={cat:selCatVal,title:desc||(CATS[selCatVal].label+' — '+loc),area:loc,city,lat,lng,reporterName:window.currentUser.displayName||'Anonymous',reporterPhoto:window.currentUser.photoURL||'',userId:window.currentUser.uid,photoUrl:photoB64||null};
   const id=await window.submitToFirebase(data);
   btn.disabled=false;btn.textContent='⚡ Submit Report — आगे बढ़ो';
@@ -483,6 +489,75 @@ function initLB(){
 }
 
 function getBadges(n){const b=[];if(n>=1)b.push('Awaaz Warrior');if(n>=10)b.push('City Guardian');if(n>=25)b.push('Change Maker');if(n>=50)b.push('Awaaz Hero');return b;}
+
+// Location autocomplete
+let locTimeout = null;
+let selectedLat = null, selectedLng = null;
+
+function locationSearch(val) {
+  selectedLat = null; selectedLng = null;
+  clearTimeout(locTimeout);
+  const sug = document.getElementById('loc-suggestions');
+  if (val.length < 3) { sug.style.display = 'none'; return; }
+  locTimeout = setTimeout(async () => {
+    try {
+      const city = document.getElementById('fcity').value || 'India';
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val+' '+city+' India')}&format=json&limit=5&countrycodes=in&addressdetails=1`);
+      const data = await res.json();
+      if (!data.length) { sug.style.display = 'none'; return; }
+      sug.innerHTML = data.map((d,i) => {
+        const name = d.display_name.split(',').slice(0,3).join(', ');
+        return `<div onclick="selectLocation('${d.display_name.replace(/'/g,"\'")}','${d.lat}','${d.lon}')" style="padding:12px 16px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--od)'" onmouseout="this.style.background='none'">📍 ${name}</div>`;
+      }).join('');
+      sug.style.display = 'block';
+    } catch(e) {}
+  }, 400);
+}
+
+function selectLocation(name, lat, lng) {
+  const parts = name.split(', ');
+  document.getElementById('flocation').value = parts.slice(0,3).join(', ');
+  // Auto fill city
+  const cityGuess = parts.find(p => p.length > 2 && !p.match(/^\d/));
+  if (cityGuess && !document.getElementById('fcity').value) {
+    document.getElementById('fcity').value = parts[parts.length - 3] || cityGuess;
+  }
+  selectedLat = parseFloat(lat);
+  selectedLng = parseFloat(lng);
+  document.getElementById('loc-suggestions').style.display = 'none';
+}
+
+async function getGPS() {
+  const btn = document.getElementById('gps-btn');
+  if (!navigator.geolocation) { showToast('❌ GPS not supported'); return; }
+  btn.textContent = '⏳ Getting location...';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    selectedLat = pos.coords.latitude;
+    selectedLng = pos.coords.longitude;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${selectedLat}&lon=${selectedLng}&format=json`);
+      const data = await res.json();
+      const addr = data.address;
+      const area = [addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(', ');
+      const city = addr.city || addr.town || addr.village || '';
+      if (area) document.getElementById('flocation').value = area;
+      if (city) document.getElementById('fcity').value = city;
+      btn.innerHTML = '✅ Location fetched!';
+      setTimeout(() => btn.innerHTML = '📍 Use My Current Location', 2000);
+    } catch(e) { btn.innerHTML = '📍 Use My Current Location'; }
+  }, err => {
+    showToast('❌ Location access denied');
+    btn.innerHTML = '📍 Use My Current Location';
+  });
+}
+
+// Hide suggestions on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#flocation') && !e.target.closest('#loc-suggestions')) {
+    const s = document.getElementById('loc-suggestions');
+    if(s) s.style.display = 'none';
+  }
+});
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 window.showToast=showToast;
