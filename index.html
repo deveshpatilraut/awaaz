@@ -181,7 +181,7 @@ onSnapshot(q, snap => {
 // Submit to Firebase
 window.submitToFirebase = async (data) => {
   try {
-    const ref = await addDoc(collection(db, 'reports'), { ...data, timestamp: serverTimestamp(), votes: 1, status: 'open' });
+    const ref = await addDoc(collection(db, 'reports'), { ...data, timestamp: serverTimestamp(), votes: 0, status: 'open' });
     return ref.id;
   } catch(e) { console.error('Submit error:', e); return null; }
 };
@@ -474,7 +474,7 @@ function addMarkers(map,arr){
         <div style="font-size:11px;color:#aaa;margin:4px 0">📍 ${r.area||''}, ${r.city||''}</div>
         <div style="margin-top:10px;display:flex;gap:8px;align-items:center;justify-content:space-between">
           <span style="background:${sc};color:${stc};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase">${r.status||'open'}</span>
-          <button onclick="window.upvoteReport('${r.id}')" style="background:#FF6B00;color:white;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:Syne;display:flex;align-items:center;gap:4px">▲ ${r.votes||1} Vote</button>
+          <button onclick="window.upvoteReport('${r.id}')" style="background:#FF6B00;color:white;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:Syne;display:flex;align-items:center;gap:4px">▲ ${r.votes||0} Vote</button>
         </div>
       </div>`);
     arr.push(m);
@@ -515,7 +515,7 @@ window.renderCards=function(){
     const sc=r.status==='fixed'?'s-fixed':r.status==='progress'?'s-progress':'s-open';
     const st=r.status==='fixed'?'✅ Fixed':r.status==='progress'?'🔧 In Progress':'🔴 Open';
     const imgHtml=r.photoUrl?`<img src="${r.photoUrl}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='${cat.icon}'">`:cat.icon;
-    return`<div class="rcard"><div class="rimg">${imgHtml}</div><div class="rbody"><div class="rcat ${cat.cls}">${cat.icon} ${cat.label}</div><div class="rtitle">${r.title||cat.label}</div><div style="font-size:12px;color:var(--gray);margin-bottom:8px">📍 ${r.area||''} ${r.city?'· '+r.city:''} · ${tAgo(r.timestamp)}</div><div class="rmeta"><div class="rloc">👤 ${r.reporterName||'Anonymous'}</div><button class="upvote-btn" onclick="event.stopPropagation();window.upvoteReport('${r.id}')">▲ ${r.votes||1}</button></div><div class="rstatus ${sc}">${st}</div></div></div>`;
+    return`<div class="rcard"><div class="rimg">${imgHtml}</div><div class="rbody"><div class="rcat ${cat.cls}">${cat.icon} ${cat.label}</div><div class="rtitle">${r.title||cat.label}</div><div style="font-size:12px;color:var(--gray);margin-bottom:8px">📍 ${r.area||''} ${r.city?'· '+r.city:''} · ${tAgo(r.timestamp)}</div><div class="rmeta"><div class="rloc">👤 ${r.reporterName||'Anonymous'}</div><button class="upvote-btn" onclick="event.stopPropagation();window.upvoteReport('${r.id}')">▲ ${r.votes||0}</button></div><div class="rstatus ${sc}">${st}</div></div></div>`;
   }).join('');
 };
 
