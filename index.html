@@ -185,8 +185,13 @@ window.submitToFirebase = async (data) => {
 // Upvote
 window.upvoteReport = async (id) => {
   if (!window.currentUser) { window.showToast('⚠️ Login karo pehle!'); return; }
-  try { await updateDoc(doc(db, 'reports', id), { votes: increment(1) }); window.showToast('👍 Vote diya!'); }
-  catch(e) { window.showToast('❌ Vote failed'); }
+  const voteKey = 'voted_' + id;
+  if (localStorage.getItem(voteKey)) { window.showToast('⚠️ Already vote de diya!'); return; }
+  try {
+    await updateDoc(doc(db, 'reports', id), { votes: increment(1) });
+    localStorage.setItem(voteKey, '1');
+    window.showToast('👍 Vote diya!');
+  } catch(e) { window.showToast('❌ Vote failed'); }
 };
 </script>
 
