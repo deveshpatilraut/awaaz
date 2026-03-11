@@ -436,7 +436,7 @@ async function doSubmit(){
   const btn=document.getElementById('sbtn');
   btn.disabled=true;btn.textContent='⏳ Submitting...';
   let lat=22.5+(Math.random()-0.5)*10,lng=78.9+(Math.random()-0.5)*10;
-  try{const g=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc+' '+city+' India')}&format=json&limit=1`);const gd=await g.json();if(gd[0]){lat=parseFloat(gd[0].lat);lng=parseFloat(gd[0].lon);}}catch{}
+  try{const g=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc+', '+city+', India')}&format=json&limit=1&countrycodes=in`);const gd=await g.json();if(gd[0]){lat=parseFloat(gd[0].lat);lng=parseFloat(gd[0].lon);}else{const g2=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city+', India')}&format=json&limit=1&countrycodes=in`);const gd2=await g2.json();if(gd2[0]){lat=parseFloat(gd2[0].lat);lng=parseFloat(gd2[0].lon);}}}catch{}
   const data={cat:selCatVal,title:desc||(CATS[selCatVal].label+' — '+loc),area:loc,city,lat,lng,reporterName:window.currentUser.displayName||'Anonymous',reporterPhoto:window.currentUser.photoURL||'',userId:window.currentUser.uid,photoUrl:photoB64||null};
   const id=await window.submitToFirebase(data);
   btn.disabled=false;btn.textContent='⚡ Submit Report — आगे बढ़ो';
